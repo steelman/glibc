@@ -1,5 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl Note we do not use AC_PREREQ here!  See aclocal.m4 for what we use instead.
+AC_PREREQ([2.70])
 AC_INIT([GNU C Library], [(see version.h)], [http://sourceware.org/bugzilla/], [glibc])
 AC_CONFIG_SRCDIR([include/features.h])
 AC_CONFIG_HEADERS([config.h])
@@ -1712,6 +1713,7 @@ use_ldconfig=no
 ldd_rewrite_script=no
 libc_cv_sysconfdir=$sysconfdir
 libc_cv_localstatedir=$localstatedir
+libc_cv_runstatedir=$runstatedir
 libc_cv_gcc_unwind_find_fde=no
 libc_cv_idn=no
 
@@ -1762,6 +1764,7 @@ AC_SUBST(libc_cv_rtlddir)
 AC_SUBST(libc_cv_complocaledir)
 AC_SUBST(libc_cv_sysconfdir)
 AC_SUBST(libc_cv_localstatedir)
+AC_SUBST(libc_cv_runstatedir)
 AC_SUBST(libc_cv_rootsbindir)
 
 if test x$use_ldconfig = xyes; then
