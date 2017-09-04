@@ -88,7 +88,7 @@ extern int __idna_to_ascii_lz (const char *input, char **output, int flags);
 extern int __idna_to_unicode_lzlz (const char *input, char **output,
 				   int flags);
 # include <libidn/idna.h>
-#endif
+#endif	/* HAVE_LIBIDN */
 
 struct gaih_service
   {
@@ -127,14 +127,14 @@ static const struct gaih_typeproto gaih_inet_typeproto[] =
   { SOCK_DGRAM, IPPROTO_UDP, 0, true, "udp" },
 #if defined SOCK_DCCP && defined IPPROTO_DCCP
   { SOCK_DCCP, IPPROTO_DCCP, 0, false, "dccp" },
-#endif
+#endif	/* SOCK_DCCP && IPPROTO_DCCP */
 #ifdef IPPROTO_UDPLITE
   { SOCK_DGRAM, IPPROTO_UDPLITE, 0, false, "udplite" },
-#endif
+#endif	/* IPPROTO_UDPLITE */
 #ifdef IPPROTO_SCTP
   { SOCK_STREAM, IPPROTO_SCTP, 0, false, "sctp" },
   { SOCK_SEQPACKET, IPPROTO_SCTP, 0, false, "sctp" },
-#endif
+#endif	/* IPPROTO_SCTP */
   { SOCK_RAW, 0, GAI_PROTO_PROTOANY|GAI_PROTO_NOSERVICE, true, "raw" },
   { 0, 0, 0, false, "" }
 };
@@ -487,7 +487,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 	      malloc_name = true;
 	    }
 	}
-#endif
+#endif	/* HAVE_LIBIDN */
 
       if (__inet_aton (name, (struct in_addr *) at->addr) != 0)
 	{
@@ -805,7 +805,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		  goto free_and_return;
 		}
 	    }
-#endif
+#endif	/* USE_NSCD */
 
 	  if (__nss_hosts_database == NULL)
 	    no_more = __nss_database_lookup ("hosts", NULL,
@@ -1147,11 +1147,11 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		canon = out;
 	      }
 	    else
-#endif
+#endif	/* HAVE_LIBIDN */
 	      {
 #ifdef HAVE_LIBIDN
 	      make_copy:
-#endif
+#endif	/* HAVE_LIBIDN */
 		if (malloc_canonbuf)
 		  /* We already allocated the string using malloc.  */
 		  malloc_canonbuf = false;
@@ -1281,9 +1281,9 @@ struct sort_result_combo
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 # define htonl_c(n) n
-#else
+#else  /* __BYTE_ORDER == __BIG_ENDIAN */
 # define htonl_c(n) __bswap_constant_32 (n)
-#endif
+#endif	/* __BYTE_ORDER == __BIG_ENDIAN */
 
 static const struct scopeentry
 {
@@ -1385,7 +1385,7 @@ static const struct prefixentry default_labels[] =
       }, 96, 4 },
     /* The next two entries differ from RFC 3484.  We need to treat
        IPv6 site-local addresses special because they are never NATed,
-       unlike site-locale IPv4 addresses.  If this would not happen, on
+       unlike site-local IPv4 addresses.  If this would not happen, on
        machines which have only IPv4 and IPv6 site-local addresses, the
        sorting would prefer the IPv6 site-local addresses, causing
        unnecessary delays when trying to connect to a global IPv6 address
@@ -1803,7 +1803,7 @@ check_gaiconf_mtime (const struct stat64 *st)
           && st->st_mtim.tv_nsec == gaiconf_mtime.tv_nsec);
 }
 
-#else
+#else  /* _STATBUF_ST_NSEC */
 
 static time_t gaiconf_mtime;
 
@@ -1819,7 +1819,7 @@ check_gaiconf_mtime (const struct stat64 *st)
   return st->st_mtime == gaiconf_mtime;
 }
 
-#endif
+#endif	/* _STATBUF_ST_NSEC */
 
 
 libc_freeres_fn(fini)
@@ -2316,7 +2316,7 @@ getaddrinfo (const char *name, const char *service,
 #ifdef HAVE_LIBIDN
 	  |AI_IDN|AI_CANONIDN|AI_IDN_ALLOW_UNASSIGNED
 	  |AI_IDN_USE_STD3_ASCII_RULES
-#endif
+#endif	/* HAVE_LIBIDN */
 	  |AI_NUMERICSERV|AI_ALL))
     return EAI_BADFLAGS;
 
