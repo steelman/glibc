@@ -299,6 +299,10 @@ convert_hostent_to_gaih_addrtuple (const struct addrinfo *req,
  }
 
 
+typedef enum nss_status (*nss_gethostbyname5_r)
+  (const char *name, int af, struct gaih_addrtuple **pat,
+   char *buffer, size_t buflen, int *errnop,
+   int *h_errnop, int32_t *ttlp);
 typedef enum nss_status (*nss_gethostbyname4_r)
   (const char *name, struct gaih_addrtuple **pat,
    char *buffer, size_t buflen, int *errnop,
@@ -833,22 +837,30 @@ gaih_inet (const char *name, const struct gaih_service *service,
 	      no_data = 0;
 	      nss_gethostbyname4_r fct4 = NULL;
 
+	      /* gethostbyname5_r accepts af argument and returns
+		 gaih_addrtupple. What more do we need? */
+	      nss_gethostbyname5_r fct5 = __nss_lookup_function (nip, "gethostbyname5_r");
 	      /* gethostbyname4_r sends out parallel A and AAAA queries and
 		 is thus only suitable for PF_UNSPEC.  */
-	      if (req->ai_family == PF_UNSPEC)
+	      if (req->ai_family == PF_UNSPEC && fct5 == NULL)
 		fct4 = __nss_lookup_function (nip, "gethostbyname4_r");
-
-	      if (fct4 != NULL)
+	      if (fct5 != NULL || fct4 != NULL)
 		{
 		  int herrno;
 
 		  while (1)
 		    {
 		      rc = 0;
-		      status = DL_CALL_FCT (fct4, (name, pat,
-						   tmpbuf->data, tmpbuf->length,
-						   &rc, &herrno,
-						   NULL));
+		      if (fct5 != NULL)
+			status = DL_CALL_FCT (fct5, (name, req->ai_family, pat,
+						     tmpbuf->data, tmpbuf->length,
+						     &rc, &herrno,
+						     NULL));
+		      else
+			status = DL_CALL_FCT (fct4, (name, pat,
+						     tmpbuf->data, tmpbuf->length,
+						     &rc, &herrno,
+						     NULL));
 		      if (status == NSS_STATUS_SUCCESS)
 			break;
 		      if (status != NSS_STATUS_TRYAGAIN
