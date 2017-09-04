@@ -83,6 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <resolv/res_hconf.h>
 #include <scratch_buffer.h>
 
+#define TRACE(fmt, args...) fprintf(stderr, "%s:%d: " fmt "\n", __func__, __LINE__, ##args)
 #ifdef HAVE_LIBIDN
 extern int __idna_to_ascii_lz (const char *input, char **output, int flags);
 extern int __idna_to_unicode_lzlz (const char *input, char **output,
@@ -819,6 +820,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 	    no_more = 0;
 	  nip = __nss_hosts_database;
 
+	  TRACE("nip: %s", nip->name);
 	  /* Initialize configurations.  */
 	  if (__glibc_unlikely (!_res_hconf.initialized))
 	    _res_hconf_init ();
@@ -844,10 +846,12 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		 is thus only suitable for PF_UNSPEC.  */
 	      if (req->ai_family == PF_UNSPEC && fct5 == NULL)
 		fct4 = __nss_lookup_function (nip, "gethostbyname4_r");
+	      TRACE("nss_lookup fct5:%p fct4:%p", fct5, fct4);
 	      if (fct5 != NULL || fct4 != NULL)
 		{
 		  int herrno;
 
+		  TRACE("DL_CALL_FCT(fct5)");
 		  while (1)
 		    {
 		      rc = 0;
@@ -1117,6 +1121,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
     size_t socklen;
     sa_family_t family;
 
+    TRACE("");
     /*
       buffer is the size of an unformatted IPv6 address in printable format.
      */
