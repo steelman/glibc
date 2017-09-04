@@ -289,7 +289,7 @@ _nss_dns_gethostbyname_r (const char *name, struct hostent *result,
 
 
 enum nss_status
-_nss_dns_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+_nss_dns_gethostbyname5_r (const char *name, int af, struct gaih_addrtuple **pat,
 			   char *buffer, size_t buflen, int *errnop,
 			   int *herrnop, int32_t *ttlp)
 {
@@ -320,10 +320,28 @@ _nss_dns_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
   int nans2p = 0;
   int resplen2 = 0;
   int ans2p_malloced = 0;
+  int type;
 
   int olderr = errno;
   enum nss_status status;
-  int n = __libc_res_nsearch (&_res, name, C_IN, T_UNSPEC,
+
+  switch (af) {
+  case AF_UNSPEC:
+    type = T_UNSPEC;
+    break;
+  case AF_INET:
+    type = T_A;
+    break;
+  case AF_INET6:
+    type = T_AAAA;
+    break;
+  default:
+    *herrnop = NO_DATA;
+    *errnop = EAFNOSUPPORT;
+    return NSS_STATUS_UNAVAIL;
+  }
+
+  int n = __libc_res_nsearch (&_res, name, C_IN, type,
 			      host_buffer.buf->buf, 2048, &host_buffer.ptr,
 			      &ans2p, &nans2p, &resplen2, &ans2p_malloced);
   if (n >= 0)
@@ -369,6 +387,16 @@ _nss_dns_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
     free (host_buffer.buf);
 
   return status;
+}
+
+
+enum nss_status
+_nss_dns_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+			   char *buffer, size_t buflen, int *errnop,
+			   int *herrnop, int32_t *ttlp)
+{
+  return _nss_dns_gethostbyname5_r (name, AF_UNSPEC, pat, buffer, buflen,
+				    errnop, herrnop,ttlp);
 }
 
 

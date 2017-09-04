@@ -578,13 +578,13 @@ _nss_nisplus_gethostbyaddr_r (const void *addr, socklen_t addrlen, int af,
 
 
 enum nss_status
-_nss_nisplus_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+_nss_nisplus_gethostbyname5_r (const char *name, int af, struct gaih_addrtuple **pat,
 			       char *buffer, size_t buflen, int *errnop,
 			       int *herrnop, int32_t *ttlp)
 {
   struct hostent host;
 
-  enum nss_status status = internal_gethostbyname2_r (name, AF_UNSPEC, &host,
+  enum nss_status status = internal_gethostbyname2_r (name, af, &host,
 						      buffer, buflen,
 						      errnop, herrnop, 0);
   if (__glibc_likely (status == NSS_STATUS_SUCCESS))
@@ -615,4 +615,13 @@ _nss_nisplus_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
     }
 
   return status;
+}
+
+enum nss_status
+_nss_nisplus_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+			       char *buffer, size_t buflen, int *errnop,
+			       int *herrnop, int32_t *ttlp)
+{
+  return _nss_nisplus_gethostbyname5_r (name, AF_UNSPEC, pat, buffer,
+					buflen, errnop, herrnop, ttlp);
 }
