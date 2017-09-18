@@ -454,7 +454,7 @@ _nss_nis_gethostbyaddr_r (const void *addr, socklen_t addrlen, int af,
 
 
 enum nss_status
-_nss_nis_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+_nss_nis_gethostbyname5_r (const char *name, int af, struct gaih_addrtuple **pat,
 			   char *buffer, size_t buflen, int *errnop,
 			   int *herrnop, int32_t *ttlp)
 {
@@ -530,7 +530,7 @@ _nss_nis_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
   buflen -= pad;
 
   struct hostent host;
-  int parse_res = parse_line (result, &host, data, buflen, errnop, AF_UNSPEC,
+  int parse_res = parse_line (result, &host, data, buflen, errnop, af,
 			      0);
   if (__glibc_unlikely (parse_res < 1))
     {
@@ -564,4 +564,13 @@ _nss_nis_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
   free (result);
 
   return NSS_STATUS_SUCCESS;
+}
+
+enum nss_status
+_nss_nis_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+			   char *buffer, size_t buflen, int *errnop,
+			   int *herrnop, int32_t *ttlp)
+{
+  return _nss_nis_gethostbyname5_r (name, AF_UNSPEC, pat, buffer, buflen,
+				    errnop, herrnop, ttlp);
 }

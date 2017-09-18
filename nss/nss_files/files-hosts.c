@@ -404,7 +404,7 @@ _nss_files_gethostbyname2_r (const char *name, int af, struct hostent *result,
 }
 
 enum nss_status
-_nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+_nss_files_gethostbyname5_r (const char *name, int af, struct gaih_addrtuple **pat,
 			     char *buffer, size_t buflen, int *errnop,
 			     int *herrnop, int32_t *ttlp)
 {
@@ -428,7 +428,7 @@ _nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
 
 	  struct hostent result;
 	  status = internal_getent (stream, &result, buffer, buflen, errnop,
-				    herrnop, AF_UNSPEC, 0, &in6_zone_id);
+				    herrnop, af, 0, &in6_zone_id);
 	  if (status != NSS_STATUS_SUCCESS)
 	    break;
 
@@ -517,4 +517,13 @@ _nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
     }
 
   return status;
+}
+
+enum nss_status
+_nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
+			     char *buffer, size_t buflen, int *errnop,
+			     int *herrnop, int32_t *ttlp)
+{
+  return _nss_files_gethostbyname5_r (name, AF_UNSPEC, pat, buffer, buflen,
+				      errnop, herrnop, ttlp);
 }
