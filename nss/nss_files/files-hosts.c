@@ -50,7 +50,7 @@ LINE_PARSER
 ("#",
  {
    char *addr;
-
+   char *zid;
    STRING_FIELD (addr, isspace, 1);
 
    if (in6_zone_id != NULL)
@@ -83,7 +83,7 @@ LINE_PARSER
        else if (af == AF_UNSPEC
 		&& inet_pton (AF_INET6, addr, entdata->host_addr) > 0)
 	 af = AF_INET6;
-       else if (strchr(addr, SCOPE_DELIMITER) != NULL)
+       else if ((zid = strchr(addr, SCOPE_DELIMITER)) != NULL)
 	 {
 	   /* Parse a zone identifier RFC 4007 11. */
 	   struct addrinfo hints;
@@ -98,7 +98,10 @@ LINE_PARSER
 	   /* Don't perform any lookups. */
 	   hints.ai_flags = AI_NUMERICHOST;
 	   hints.ai_family = AF_INET6;
-
+	   
+	   __inet6_scopeid_pton ((struct in6_addr *) at->addr,
+					   scope_delim + 1,
+					   &at->scopeid)
 	   ret = getaddrinfo(addr, NULL, &hints, &res);
 	   if (ret != 0)
 	     return 0;
