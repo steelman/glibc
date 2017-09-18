@@ -505,7 +505,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 	      malloc_name = true;
 	    }
 	}
-#endif
+#endif	/* HAVE_LIBIDN */
 
       if (__inet_aton (name, (struct in_addr *) at->addr) != 0)
 	{
@@ -753,7 +753,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		  goto free_and_return;
 		}
 	    }
-#endif
+#endif	/* USE_NSCD */
 
 	  if (__nss_hosts_database == NULL)
 	    no_more = __nss_database_lookup ("hosts", NULL,
@@ -1060,7 +1060,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		canon = out;
 	      }
 	    else
-#endif
+#endif	/* HAVE_LIBIDN */
 	      {
 #ifdef HAVE_LIBIDN
 	      make_copy:
@@ -1121,7 +1121,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 
 #ifdef _HAVE_SA_LEN
 	    ai->ai_addr->sa_len = socklen;
-#endif /* _HAVE_SA_LEN */
+#endif
 	    ai->ai_addr->sa_family = family;
 
 	    /* In case of an allocation error the list must be NULL
@@ -1297,7 +1297,7 @@ static const struct prefixentry default_labels[] =
       }, 96, 4 },
     /* The next two entries differ from RFC 3484.  We need to treat
        IPv6 site-local addresses special because they are never NATed,
-       unlike site-locale IPv4 addresses.  If this would not happen, on
+       unlike site-local IPv4 addresses.  If this would not happen, on
        machines which have only IPv4 and IPv6 site-local addresses, the
        sorting would prefer the IPv6 site-local addresses, causing
        unnecessary delays when trying to connect to a global IPv6 address
@@ -1715,7 +1715,7 @@ check_gaiconf_mtime (const struct stat64 *st)
           && st->st_mtim.tv_nsec == gaiconf_mtime.tv_nsec);
 }
 
-#else
+#else  /* not _STATBUF_ST_NSEC */
 
 static time_t gaiconf_mtime;
 
@@ -1731,7 +1731,7 @@ check_gaiconf_mtime (const struct stat64 *st)
   return st->st_mtime == gaiconf_mtime;
 }
 
-#endif
+#endif	/* _STATBUF_ST_NSEC */
 
 
 libc_freeres_fn(fini)
