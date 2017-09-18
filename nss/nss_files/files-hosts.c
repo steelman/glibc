@@ -33,8 +33,8 @@
 #define DATABASE	"hosts"
 #define NEED_H_ERRNO
 
-#define EXTRA_ARGS	 , af, flags
-#define EXTRA_ARGS_DECL	 , int af, int flags
+#define EXTRA_ARGS	 , af, flags, in6_zone_id
+#define EXTRA_ARGS_DECL	 , int af, int flags, uint32_t *in6_zone_id
 
 #define ENTDATA hostent_data
 struct hostent_data
@@ -52,6 +52,9 @@ LINE_PARSER
    char *addr;
 
    STRING_FIELD (addr, isspace, 1);
+
+   if (in6_zone_id != NULL)
+     *in6_zone_id = 0;
 
    /* Parse address.  */
    if (inet_pton (af == AF_UNSPEC ? AF_INET : af, addr, entdata->host_addr)
@@ -80,6 +83,40 @@ LINE_PARSER
        else if (af == AF_UNSPEC
 		&& inet_pton (AF_INET6, addr, entdata->host_addr) > 0)
 	 af = AF_INET6;
+       else if (strchr(addr, SCOPE_DELIMITER) != NULL)
+	 {
+	   /* Parse a zone identifier RFC 4007 11. */
+	   struct addrinfo hints;
+	   struct addrinfo *res;
+	   struct sockaddr_in6 *sa;
+	   int ret;
+
+	   /* Only IPv6 link-local addresses can have zone identifiers. */
+	   af = AF_INET6;
+
+	   memset(&hints, 0, sizeof(struct addrinfo));
+	   /* Don't perform any lookups. */
+	   hints.ai_flags = AI_NUMERICHOST;
+	   hints.ai_family = AF_INET6;
+
+	   ret = getaddrinfo(addr, NULL, &hints, &res);
+	   if (ret != 0)
+	     return 0;
+
+	   sa = (struct sockaddr_in6*)res->ai_addr;
+
+	   /* Zone identifiers makes sense only for link-local addresses. */
+	   if (!IN6_IS_ADDR_LINKLOCAL(sa->sin6_addr.s6_addr)) {
+	     freeaddrinfo(res);
+	     return 0;
+	   }
+
+	   if (in6_zone_id != NULL)
+	     *in6_zone_id = sa->sin6_scope_id;
+
+	   memcpy(entdata->host_addr, &sa->sin6_addr, IN6ADDRSZ);
+	   freeaddrinfo(res);
+	 }
        else
 	 /* Illegal address: ignore line.  */
 	 return 0;
@@ -99,14 +136,14 @@ LINE_PARSER
 
 #define EXTRA_ARGS_VALUE \
   , (res_use_inet6 () ? AF_INET6 : AF_INET),		      \
-  (res_use_inet6 () ? AI_V4MAPPED : 0)
+  (res_use_inet6 () ? AI_V4MAPPED : 0), NULL
 #include "files-XXX.c"
 #undef EXTRA_ARGS_VALUE
 
 /* We only need to consider IPv4 mapped addresses if the input to the
    gethostbyaddr() function is an IPv6 address.  */
 #define EXTRA_ARGS_VALUE \
-  , af, (len == IN6ADDRSZ ? AI_V4MAPPED : 0)
+  , af, (len == IN6ADDRSZ ? AI_V4MAPPED : 0), NULL
 DB_LOOKUP (hostbyaddr, ,,,
 	   {
 	     if (result->h_length == (int) len
@@ -135,7 +172,7 @@ _nss_files_gethostbyname3_r (const char *name, int af, struct hostent *result,
       int flags = (res_use_inet6 () ? AI_V4MAPPED : 0);
 
       while ((status = internal_getent (stream, result, buffer, buflen, errnop,
-					herrnop, af, flags))
+					herrnop, af, flags, NULL))
 	     == NSS_STATUS_SUCCESS)
 	{
 	  LOOKUP_NAME_CASE (h_name, h_aliases)
@@ -163,7 +200,7 @@ _nss_files_gethostbyname3_r (const char *name, int af, struct hostent *result,
 	again:
 	  while ((status = internal_getent (stream, &tmp_result_buf, tmp_buffer,
 					    tmp_buflen, errnop, herrnop, af,
-					    flags))
+					    flags, NULL))
 		 == NSS_STATUS_SUCCESS)
 	    {
 	      int matches = 1;
@@ -385,12 +422,13 @@ _nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
 	  /* Align the buffer for the next record.  */
 	  uintptr_t pad = (-(uintptr_t) buffer
 			   % __alignof__ (struct hostent_data));
+	  uint32_t in6_zone_id = 0;
 	  buffer += pad;
 	  buflen = buflen > pad ? buflen - pad : 0;
 
 	  struct hostent result;
 	  status = internal_getent (stream, &result, buffer, buflen, errnop,
-				    herrnop, AF_UNSPEC, 0);
+				    herrnop, AF_UNSPEC, 0, &in6_zone_id);
 	  if (status != NSS_STATUS_SUCCESS)
 	    break;
 
@@ -448,7 +486,7 @@ _nss_files_gethostbyname4_r (const char *name, struct gaih_addrtuple **pat,
 	  got_canon = true;
 	  (*pat)->family = result.h_addrtype;
 	  memcpy ((*pat)->addr, result.h_addr_list[0], result.h_length);
-	  (*pat)->scopeid = 0;
+	  (*pat)->scopeid = in6_zone_id;
 
 	  pat = &((*pat)->next);
 
