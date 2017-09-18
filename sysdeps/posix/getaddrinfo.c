@@ -85,6 +85,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <scratch_buffer.h>
 #include <inet/net-internal.h>
 
+#define TRACE(fmt, args...) fprintf(stderr, "%s:%d: " fmt "\n", __func__, __LINE__, ##args)
 #ifdef HAVE_LIBIDN
 extern int __idna_to_ascii_lz (const char *input, char **output, int flags);
 extern int __idna_to_unicode_lzlz (const char *input, char **output,
@@ -767,6 +768,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
 	    no_more = 0;
 	  nip = __nss_hosts_database;
 
+	  TRACE("nip: %s", nip->name);
 	  /* If we are looking for both IPv4 and IPv6 address we don't
 	     want the lookup functions to automatically promote IPv4
 	     addresses to IPv6 addresses, so we use the no_inet6
@@ -788,8 +790,11 @@ gaih_inet (const char *name, const struct gaih_service *service,
 		 is thus only suitable for PF_UNSPEC.  */
 	      if (req->ai_family == PF_UNSPEC && fct5 == NULL)
 		fct4 = __nss_lookup_function (nip, "gethostbyname4_r");
+	      TRACE("nss_lookup fct5:%p fct4:%p", fct5, fct4);
 	      if (fct5 != NULL || fct4 != NULL)
 		{
+
+		  TRACE("DL_CALL_FCT(fct5||fct4)");
 		  while (1)
 		    {
 		      if (fct5 != NULL)
@@ -1030,6 +1035,7 @@ gaih_inet (const char *name, const struct gaih_service *service,
     size_t socklen;
     sa_family_t family;
 
+    TRACE("");
     /*
       buffer is the size of an unformatted IPv6 address in printable format.
      */
